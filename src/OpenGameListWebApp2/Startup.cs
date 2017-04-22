@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace OpenGameListWebApp2
+namespace OpenGameListWebApp
 {
     public class Startup
     {

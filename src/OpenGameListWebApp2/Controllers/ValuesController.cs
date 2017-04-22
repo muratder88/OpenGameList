@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
-namespace OpenGameListWebApp2.Controllers
+namespace OpenGameListWebApp.Controllers
 {
     [Produces("application/json")]
     [Route("api/Values")]
