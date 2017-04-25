@@ -2,8 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using OpenGameListWebApp.Data;
+using OpenGameListWebApp.Data.Items;
 using OpenGameListWebApp.ViewModels;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -13,6 +16,18 @@ namespace OpenGameListWebApp.Controllers
     [Route("api/[controller]")]
     public class ItemsController : Controller
     {
+        #region Private Fields
+        private ApplicationDbContext DbContext;
+        #endregion Private Fields
+
+        #region Constructor
+        public ItemsController(ApplicationDbContext context)
+        {
+            // Dependency Injetion
+            DbContext = context;
+        }
+        #endregion Constructor
+
         #region Restfull Convetntions
         /// <summary>
         /// GET: api/items
@@ -32,10 +47,9 @@ namespace OpenGameListWebApp.Controllers
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            return new JsonResult(GetSampleItems()
-            .Where(i => i.Id == id)
-            .FirstOrDefault(),
-            DefaultJsonSettings);
+            var item = DbContext.Items.Where(i => i.Id == id).FirstOrDefault();
+            return new JsonResult(Mapper.Map<ItemViewModel>(item), DefaultJsonSettings);
+
         }
         #endregion
 
@@ -63,9 +77,9 @@ namespace OpenGameListWebApp.Controllers
         public IActionResult GetLatest(int n)
         {
             if (n > MaxNumberOfItems) n = MaxNumberOfItems;
-            var items = GetSampleItems().OrderByDescending(i =>
-            i.CreatedDate).Take(n);
-            return new JsonResult(items, DefaultJsonSettings);
+            var items = DbContext.Items.OrderByDescending(i => i.CreatedDate).Take(n).ToArray();
+
+            return new JsonResult(ToItemViewModelList(items), DefaultJsonSettings);
         }
 
         ///<summary>
@@ -90,9 +104,8 @@ namespace OpenGameListWebApp.Controllers
         public IActionResult GetMostViewed(int n)
         {
             if (n > MaxNumberOfItems) n = MaxNumberOfItems;
-            var items = GetSampleItems().OrderByDescending(i =>
-            i.ViewCount).Take(n);
-            return new JsonResult(items, DefaultJsonSettings);
+            var items = DbContext.Items.OrderByDescending(i => i.ViewCount).Take(n).ToArray();
+            return new JsonResult(ToItemViewModelList(items), DefaultJsonSettings);
         }
         /// <summary>
         /// GET: api/items/GetRandom
@@ -114,13 +127,26 @@ namespace OpenGameListWebApp.Controllers
         public IActionResult GetRandom(int n)
         {
             if (n > MaxNumberOfItems) n = MaxNumberOfItems;
-            var items = GetSampleItems().OrderBy(i =>
-            Guid.NewGuid()).Take(n);
-            return new JsonResult(items, DefaultJsonSettings);
+            var items = DbContext.Items.OrderBy(i => Guid.NewGuid()).Take(n).ToArray();
+            return new JsonResult(ToItemViewModelList(items),
+            DefaultJsonSettings);
         }
         #endregion Attribute-base Routing
 
         #region Private Members
+        /// <summary>
+        /// Maps a collection of Item entities into a list of ItemViewModel objects.
+        /// </summary>
+        /// <param name="items">An IEnumerable collection of item entities</param>
+        /// <returns>a mapped list of ItemViewModel objects</returns>
+        private List<ItemViewModel> ToItemViewModelList(IEnumerable<Item> items)
+        {
+            var lst = new List<ItemViewModel>();
+            foreach (var i in items)
+                lst.Add(Mapper.Map<ItemViewModel>(i));
+            return lst;
+        }
+
         /// <summary>
         /// Generate a sample array of source Items to emulate a database
         ///(for testing purposes only).

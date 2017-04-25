@@ -29,7 +29,6 @@ import { ItemService } from "./item.service";
     ],
     imports: [
         UniversalModule, // Must be first import. This automatically imports BrowserModule, HttpModule, and JsonpModule too.
-        HttpModule,
         FormsModule,
         RouterModule,
         AppRouting

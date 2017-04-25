@@ -2,12 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SpaServices.Webpack;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using OpenGameListWebApp.Data;
+using OpenGameListWebApp.Data.Items;
+using OpenGameListWebApp.ViewModels;
 
 namespace OpenGameListWebApp
 {
@@ -30,10 +36,20 @@ namespace OpenGameListWebApp
         {
             // Add framework services.
             services.AddMvc();
+
+            //Add EntityFrameowrk's Identity support
+            services.AddEntityFramework();
+            //Add ApplicationDbContes
+            services.AddDbContext<ApplicationDbContext>(options =>
+           options.UseSqlServer(Configuration["Data:DefaultConnection:ConnectionString"]) );
+
+            //Add ApplicationDbContext's DbSeeder
+            services.AddSingleton<DbSeeder>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, 
+            ILoggerFactory loggerFactory,DbSeeder dbSeeder)
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
@@ -62,6 +78,21 @@ namespace OpenGameListWebApp
                     name: "spa-fallback",
                     defaults: new { controller = "Home", action = "Index" });
             });
+
+            //AutoMapper binding configuration
+            Mapper.Initialize(cfg =>
+            {
+                cfg.CreateMap<Item, ItemViewModel>();
+            });
+            //Seeed the Database (if needed)
+            try
+            {
+                dbSeeder.SeedAsync().Wait();
+            }
+            catch (AggregateException e)
+            {
+                throw new Exception(e.ToString());
+            }
         }
     }
 }
