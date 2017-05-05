@@ -48,20 +48,100 @@ namespace OpenGameListWebApp.Controllers
         public IActionResult Get(int id)
         {
             var item = DbContext.Items.Where(i => i.Id == id).FirstOrDefault();
-            return new JsonResult(Mapper.Map<ItemViewModel>(item), DefaultJsonSettings);
+            if (item != null)
+                return new JsonResult(Mapper.Map<ItemViewModel>(item), DefaultJsonSettings);
+            else
+                return NotFound(new { Error = string.Format("Item ID {0} has not been found", id) });
 
+        }
+        /// <summary>
+        /// POST: api/items
+        /// </summary>
+        /// <returns>Creates a new Item and return it accordingly.</returns>
+        [HttpPost]
+        public IActionResult  Add([FromBody]ItemViewModel ivm)
+        {
+            if (ivm != null)
+            {
+                //create a new Item with the client-sent json data 
+                var item = Mapper.Map<Item>(ivm);
+                //ovverride any property that could be wise to set from server side only
+                item.CreatedDate = item.LastModifiedDate = DateTime.Now;
+                //TODO: replace the following with current user's id when authentication will be available
+                item.UserId = DbContext.Users.Where(u => u.UserName == "Admin").FirstOrDefault().Id;
+                //add the new item 
+                DbContext.Items.Add(item);
+                //persist the changes into the database
+                DbContext.SaveChanges();
+                //return the newly-created Item to the client
+                return new JsonResult(Mapper.Map<ItemViewModel>(item),DefaultJsonSettings);
+            }
+            // return a generic HTTP Status 500 (Not Found) if the client payload is invalid.
+                return new StatusCodeResult(500);
+        }
+        /// <summary>
+        /// PUT: api/items/{id}
+        /// </summary>
+        ///<returns>Updates an existing Item and return it accordingly.</returns>
+        ///[HttpPut("{id}")]
+        public IActionResult Update(int id, [FromBody]ItemViewModel ivm)
+        {
+            if (ivm != null)
+            {
+                var item = DbContext.Items.Where(i => i.Id == id).FirstOrDefault();
+                if (item != null)
+                {
+                    //handle the update (on per-property basis)
+                    item.UserId = ivm.UserId;
+                    item.Description = ivm.Description;
+                    item.Flags = ivm.Flags;
+                    item.Notes = ivm.Notes;
+                    item.Text = ivm.Text;
+                    item.Type = ivm.Type;
+                    // override any property that could be wise to set from server - side only
+                    item.LastModifiedDate = DateTime.Now;
+                    //persist the changes into the database
+                    DbContext.SaveChanges();
+                    //return the updated item to the client 
+                    return new JsonResult(Mapper.Map<ItemViewModel>(item),DefaultJsonSettings);
+                }
+                // return a HTTP Status 404 (Not Found) if we couldn't find a suitable item.
+                return NotFound(new{ Error = String.Format("Item ID {0} hasnot been found", id) });
+            }
+            // return a generic HTTP Status 500 (Not Found) if the client payload is invalid.
+            return new StatusCodeResult(500);
+        }
+        /// <summary>
+        /// DELETE: api/items/{id}
+        /// </summary>
+        /// <returns>Deletes an Item, returning a HTTP status 200 (ok) when done.</returns>
+        /// [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var item = DbContext.Items.Where(i => i.Id == id).FirstOrDefault();
+            if (item != null)
+            {
+                //remove the item to delete from the DbContext
+                DbContext.Items.Remove(item);
+                //persist the changes into the Database
+                DbContext.SaveChanges();
+                //return an HTTP Status 200 (OK)
+                return new OkResult();
+            }
+            //return a HTTP status 404 (Not Found) if we could'nt find a suitable item 
+            return NotFound(new { Error = string.Format("Item ID {0} has not been found", id) });
         }
         #endregion
 
 
-        #region Attribute-based Routing
+            #region Attribute-based Routing
 
 
-        /// <summary>
-        /// GET: api/items/GetLatest
-        /// ROUTING TYPE: attribute-based
-        /// </summary>
-        /// <returns>An array of a default number of Json-serialized objects representing the last inserted items.</returns>
+            /// <summary>
+            /// GET: api/items/GetLatest
+            /// ROUTING TYPE: attribute-based
+            /// </summary>
+            /// <returns>An array of a default number of Json-serialized objects representing the last inserted items.</returns>
         [HttpGet("GetLatest")]
         public IActionResult GetLatest()
         {

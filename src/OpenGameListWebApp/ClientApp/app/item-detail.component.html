@@ -12,4 +12,14 @@ title..." />
           placeholder="Insert a suitable description..."></textarea>
         </li>
     </ul>
+    <div *ngIf="item.Id==0" class="commands insert">
+        <input type="button" value="Save" (click)="onInsert(item)" />
+        <input type="button" value="Cancel" (click)="onBack()"/>
+    </div>
+    <div *ngIf="item.Id!=0" class="commands update">
+        <input type="button" value="Update" (click)="onUpdate(item)"/>
+        <input type="button" value="Delete" (click)="onDelete(item)" />
+        <input type="button" value="Back" (click)="onBack()"/>
+        
+    </div>
 </div>
